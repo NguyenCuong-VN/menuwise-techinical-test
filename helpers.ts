@@ -45,7 +45,7 @@ export function CalcRealCostByBasePrice(realUoM: UnitOfMeasure, basePrice: numbe
 }
 
 // calc nutrient amount from real amount in recipe based on nutrient fact of products
-export function CalcRealNutrientsInAnItem(nutrientFacts: NutrientFact[]) {
+export function CalcRealNutrientsInAnItem(realUoM: UnitOfMeasure, nutrientFacts: NutrientFact[]) {
   const realNutrientFacts: {
     [key: string]: UnitOfMeasure;
   } = {};
@@ -55,10 +55,14 @@ export function CalcRealNutrientsInAnItem(nutrientFacts: NutrientFact[]) {
     // Convert unit to base unit
     const nutrientFactInBaseUnits = GetNutrientFactInBaseUnits(nutrientFact);
 
+    // Convert real using amount in recipe to base unit
+    const realUoMByBaseUnit = ConvertMultiUnits(realUoM, nutrientFactInBaseUnits.quantityPer.uomName, nutrientFactInBaseUnits.quantityPer.uomType);
+
     realNutrientFacts[nutrientFactInBaseUnits.nutrientName] = {
-      uomAmount: nutrientFactInBaseUnits.quantityAmount.uomAmount,
-      uomName: nutrientFactInBaseUnits.quantityPer.uomName,
-      uomType: nutrientFactInBaseUnits.quantityPer.uomType
+      // contain A qty nutrient in B qty unit => real nutrient = (A/B) * real UoM
+      uomAmount: (nutrientFactInBaseUnits.quantityAmount.uomAmount / nutrientFactInBaseUnits.quantityPer.uomAmount) * realUoMByBaseUnit.uomAmount,
+      uomName: realUoMByBaseUnit.uomName,
+      uomType: realUoMByBaseUnit.uomType
     };
   }
 
@@ -76,26 +80,36 @@ export function ConvertMultiUnits(fromUoM: UnitOfMeasure, toUoMName: UoMName, to
 }
 
 // Take an nutrient list and total quantity of recipe product. Then return the nutrient fact based on base nutrient data
-export function CalcTotalNutrientFacts(nutrients: { [key: string]: UnitOfMeasure }) {
+// calcByNutrientBase function convert total nutrient amount to nutrient fact
+export function CalcTotalNutrientFacts(nutrients: { [key: string]: UnitOfMeasure }, totalQty: UnitOfMeasure) {
+  // convert UoM to base unit
+  const totalQtyBaseUnit = ConvertMultiUnits(totalQty, NutrientBaseUoM.uomName, NutrientBaseUoM.uomType);
+
   const nutrientFacts: { [key: string]: NutrientFact } = {};
   for (const nutrientName in nutrients) {
     const nutrient = nutrients[nutrientName];
     nutrientFacts[nutrientName] = {
       nutrientName: nutrientName,
       quantityAmount: {
-        uomAmount: nutrient.uomAmount,
+        uomAmount: calcByNutrientBase(nutrient, totalQtyBaseUnit), // convert total nutrient amount to nutrient fact
         uomName: nutrient.uomName,
         uomType: nutrient.uomType
       },
       quantityPer: {
         uomAmount: NutrientBaseUoM.uomAmount,
-        uomName: NutrientBaseUoM.uomName,
-        uomType: NutrientBaseUoM.uomType
+        uomName: totalQtyBaseUnit.uomName,
+        uomType: totalQtyBaseUnit.uomType
       }
     };
   }
 
   return nutrientFacts;
+}
+
+// Calc Nutrient based on Base Nutrient data (100 grams)
+// (total amount of nutrient / amount of product recipe) * base amount
+export function calcByNutrientBase(nutrient: UnitOfMeasure, totalQty: UnitOfMeasure) {
+  return (nutrient.uomAmount / totalQty.uomAmount) * NutrientBaseUoM.uomAmount;
 }
 
 // Take object and return another key sorted object
