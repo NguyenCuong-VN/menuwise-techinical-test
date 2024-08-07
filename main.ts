@@ -1,14 +1,5 @@
-import {
-  CalcRealCostByBasePrice,
-  CalcRealNutrientsInAnItem,
-  CalcTotalNutrientFacts,
-  ConvertMultiUnits,
-  GetLowestCostByIngredient,
-  LowestCostProduct,
-  sortObjectKeys
-} from "./helpers";
-import { GetRecipes, NutrientBaseUoM } from "./supporting-files/data-access";
-import { SumUnitsOfMeasure } from "./supporting-files/helpers";
+import { CalcRealCostByBasePrice, CalcRealNutrientsInAnItem, CalcTotalNutrientFacts, GetLowestCostByIngredient, LowestCostProduct, sortObjectKeys } from "./helpers";
+import { GetRecipes } from "./supporting-files/data-access";
 import { Recipe, UnitOfMeasure } from "./supporting-files/models";
 import { ExpectedRecipeSummary, RunTest } from "./supporting-files/testing";
 
@@ -30,11 +21,6 @@ const baseIngredientPricing: { [key: string]: LowestCostProduct } = {};
 
 const calcAnRecipeSummary = (recipe: Recipe) => {
   let totalCost = 0;
-  let totalQtyOfRecipe: UnitOfMeasure = {
-    uomAmount: 0,
-    uomName: NutrientBaseUoM.uomName,
-    uomType: NutrientBaseUoM.uomType
-  };
   const nutrients: { [key: string]: UnitOfMeasure } = {}; // total nutrients used in this recipe
 
   for (const lineItem of recipe.lineItems) {
@@ -60,9 +46,6 @@ const calcAnRecipeSummary = (recipe: Recipe) => {
       if (!nutrients[nutrientName]) nutrients[nutrientName] = realNutrients[nutrientName];
       else nutrients[nutrientName].uomAmount += realNutrients[nutrientName].uomAmount;
     }
-    const convertedItem = ConvertMultiUnits(lineItem.unitOfMeasure, totalQtyOfRecipe.uomName, totalQtyOfRecipe.uomType);
-
-    totalQtyOfRecipe = SumUnitsOfMeasure(totalQtyOfRecipe, convertedItem);
   }
 
   // calc total nutrients
