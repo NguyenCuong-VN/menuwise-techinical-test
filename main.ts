@@ -53,7 +53,7 @@ const calcAnRecipeSummary = (recipe: Recipe) => {
     totalCost += CalcRealCostByBasePrice(lineItem.unitOfMeasure, lowestCostProduct.basePrice);
 
     // ----------calc nutrients of line item----------
-    const realNutrients = CalcRealNutrientsInAnItem(lowestCostProduct.nutrientFacts);
+    const realNutrients = CalcRealNutrientsInAnItem(lineItem.unitOfMeasure, lowestCostProduct.nutrientFacts);
 
     // ----------sum nutrients & sum qty----------
     for (const nutrientName in realNutrients) {
@@ -66,7 +66,7 @@ const calcAnRecipeSummary = (recipe: Recipe) => {
   }
 
   // calc total nutrients
-  const nutrientFacts = CalcTotalNutrientFacts(nutrients);
+  const nutrientFacts = CalcTotalNutrientFacts(nutrients, totalQtyOfRecipe);
 
   // summarize
   const recipeDetail = {
